@@ -1,0 +1,39 @@
+{
+    "id": 154654654,    
+    "nombre": "Conrad",
+    "apellidos": "Meyer-Alten",
+    "email": "meyer@gmail.com",
+    "pass":  "password",
+    "secret": "sfljkhskjdlfhslf",
+    "img": "",
+    "movil": "665663664",
+    "vehiculos": [
+        {
+            "matricula": "4561MDN",
+            "modelo": "Golf 4",
+            "cargador": "Tipo 1"
+        },
+        {
+            "matricula": "2361MDN",
+            "modelo": "Golf 4",
+            "cargador": "Tipo 3"
+        }
+    ],
+    "facturas": [
+        {   
+            "concepto": "Recarga numero X",
+            "idFactura": 33513486,
+            "importe": "65$",
+            "fechas": "date.now",
+            "reating": ""
+        }
+    ],
+    "tarjeta": [
+        {
+            "titular": "Conrad",
+            "numero": 646546454654654,
+            "fechaCaducidad": "fecha",
+            "codigo": 190
+        }
+    ]
+}
