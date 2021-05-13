@@ -1,6 +1,7 @@
 // -------------------------------------------------------------------------------
 // Node modules
 // -------------------------------------------------------------------------------
+require("dotenv").config();
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -210,7 +211,7 @@ const mailer = (invoice) => {
     service: "Gmail",
     auth: {
       user: "tbgreenteam@gmail.com",
-      pass: "josjoschapcon",
+      pass: process.env.PASS,
     },
   });
 
