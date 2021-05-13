@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------
 // Node modules
 // -------------------------------------------------------------------------------
-const md5 = require("md5");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const randomstring = require("randomstring");
@@ -30,7 +30,8 @@ function validateEmail(email) {
 }
 
 function validatePass(pass) {
-  let patternPass = /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
+  let patternPass =
+    /(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
   return patternPass.test(pass);
 }
 
@@ -45,7 +46,8 @@ function validateSurname(surname) {
 }
 
 function validateCard(card) {
-  let patternCard = /^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35d{3})d{11})$/;
+  let patternCard =
+    /^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35d{3})d{11})$/;
   return patternCard.test(card);
 }
 
@@ -55,6 +57,9 @@ function validateCard(card) {
 
 const signUp = async (user) => {
   const secret = randomstring.generate();
+  let hash = crypto.createHmac("sha512", user.pass);
+  hash.update(user.pass);
+  const value = hash.digest("hex");
   const id = nanoid(10);
   const USER = {
     id,
@@ -63,7 +68,7 @@ const signUp = async (user) => {
     surname: user.surname,
     email: user.email,
     movil: user.movil,
-    pass: md5(user.pass),
+    pass: value,
     secret,
     coches: [],
     facturas: [],
@@ -74,9 +79,12 @@ const signUp = async (user) => {
 };
 
 const signIn = async (user) => {
+  let hash = crypto.createHmac("sha512", user.pass);
+  hash.update(user.pass);
+  const value = hash.digest("hex");
   const USER = {
     email: user.email,
-    pass: md5(user.pass),
+    pass: value,
   };
   const result = await checkUser(USER);
   return result;
@@ -152,7 +160,7 @@ const newInvoice = async (invoice, token) => {
     direccion: invoice.direccion,
     fecha: new Date(),
   };
-
+  mailer(invoice);
   const result = await newInvoiceDB(newInvoice);
   return result;
 };
@@ -197,105 +205,7 @@ const readUser = async (token) => {
 };
 
 // --------------- PARA CHEQUEAR ---------------
-const newPass = async (email) => {
-  const sql = `SELECT * FROM usuarios WHERE email = "${email}"`;
-  const response = await doQuery(sql);
-  let result;
-
-  if (response.length !== 0) {
-    const token = jwt.sign({ email: email }, response[0].pass);
-    const link = `https://fyf-greenteam.netlify.app/pass/recuperar/?token=${token}`;
-    try {
-      await mailer(email, link).then((res) => {
-        if (res) {
-          result = {
-            status: 200,
-            data: `Correo electrónico mandado a ${email}`,
-            ok: true,
-          };
-        } else {
-          result = {
-            status: 404,
-            data: "Algo ha salido mal...",
-            ok: false,
-          };
-        }
-      });
-    } catch (error) {
-      result = {
-        status: 500,
-        data: `Error al mandar correo a ${email}: error`,
-        ok: false,
-      };
-    }
-  } else {
-    result = {
-      status: 406,
-      data: "Este correo no existe",
-      ok: false,
-    };
-  }
-
-  return result;
-};
-
-const changePass = async (newPass, token) => {
-  if (validatePass(newPass)) {
-    try {
-      const decode = jwt.decode(token);
-      const sql = `SELECT * FROM usuarios WHERE email = "${decode.email}"`;
-      const response = await doQuery(sql);
-
-      if (response.length !== 0) {
-        const pass = response[0].pass;
-        try {
-          const res = jwt.verify(token, pass);
-          if (res.email) {
-            const newSecret = randomstring.generate();
-            const sql2 = `UPDATE usuarios SET secret = "${newSecret}", pass = "${md5(
-              newPass
-            )}" WHERE email = "${decode.email}"`;
-            const response = await doQuery(sql2);
-            return response.changedRows > 0
-              ? {
-                  status: 200,
-                  data: "Password cambiada",
-                  ok: true,
-                }
-              : {
-                  status: 406,
-                  data: "Algo va mal...",
-                  ok: false,
-                };
-          } else {
-            const result = {
-              status: 500,
-              data: "La contraseña ya ha sido cambiada",
-              ok: false,
-            };
-            return result;
-          }
-        } catch (error) {
-          const result = {
-            OK: 0,
-            error: 401,
-            message: `Token no válido: ${error.message}`,
-          };
-          return result;
-        }
-      }
-    } catch (error) {
-      const result = {
-        status: 400,
-        data: `No hay token.`,
-        ok: false,
-      };
-      return result;
-    }
-  }
-};
-
-const mailer = (email, link) => {
+const mailer = (invoice) => {
   const transporter = nodemailer.createTransport({
     service: "Gmail",
     auth: {
@@ -305,10 +215,35 @@ const mailer = (email, link) => {
   });
 
   const mailOptions = {
-    from: "FyF Tu Portal de Empleo IT",
-    to: email,
-    subject: "RECUPERACION DE CONTRASEÑA",
-    text: `Pincha aquí para recuperar tu contraseña ${link}`,
+    from: "Miutu",
+    to: invoice.email,
+    subject: "Tu recarga ya está en camino",
+    html: `
+    <table border="0" cellpadding="0" cellspacing="0" width="600px" margin="20px auto" background-color="#2d3436" bgcolor="#2d3436">
+    <tr height="200px">  
+        <td bgcolor="" width="600px">
+            <h1 style="color: #fff; text-align:center">Gracias, ${invoice.nombre} </h1>
+            <h3  style="color: #fff; text-align:center">
+            ¡Tu
+                <span style="color: #22C47D">CHARGER</span> 
+                ya está en camino!
+            </h3>
+            <h4  style="color: #fff; text-align:center">
+            La factura de tu ${invoice.concepto} ya está disponible en <span style="color: #22C47D">Mis Recargas</span>.
+            </h4>
+            <h3  style="color: #fff; text-align:center">
+             Importe: ${invoice.importe}
+            </h3>
+        </td>
+    </tr>
+    <tr bgcolor="#fff">
+        <td style="text-align:center">
+            <p style="color: #000">¡Miutu, un mundo de recargas a su disposición!</p>
+        </td>
+    </tr>
+    </table>
+
+`,
   };
 
   return new Promise((res, rej) => {
@@ -324,16 +259,19 @@ const mailer = (email, link) => {
 };
 
 const signUpGoogle = async (user) => {
+  let hash = crypto.createHmac("sha512", user.pass);
+  hash.update(user.pass);
+  const value = hash.digest("hex");
   const secret = randomstring.generate();
   const id = nanoid(10);
   const USER = {
     id,
     img: "",
     name: user.name,
-    surname: user.surname,
+    surname: "",
     email: user.email,
     movil: user.movil,
-    pass: md5(user.pass),
+    pass: value,
     secret,
     coches: [],
     facturas: [],
@@ -364,7 +302,5 @@ module.exports = {
   deleteCar,
   deleteCard,
   readUser,
-  newPass,
-  changePass,
   signUpGoogle,
 };

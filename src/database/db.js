@@ -109,8 +109,7 @@ const deleteSecret = (token) => {
               if (result === null) {
                 res({
                   status: 401,
-                  data:
-                    "No se ha encontrado a ningun usuario con ese id, token incorrecto",
+                  data: "No se ha encontrado a ningun usuario con ese id, token incorrecto",
                   ok: false,
                 });
               } else if (result.result.n === 1) {
@@ -484,50 +483,39 @@ const deleteCardDB = (tarjeta) => {
 // --------------- PARA CHEQUEAR ---------------
 const registerNewUserGoogle = (USER) => {
   return new Promise((res, rej) => {
-    const secret = randomstring.generate();
-    connection.query(
-      `INSERT INTO usuarios (email, pass, secret) VALUES ("${USER.email}","${USER.pass}", "${secret}")`,
-      function (error, results, fields) {
-        if (error) {
-          const result = {
-            status: 405,
-            data: "Usuario ya existe",
-            ok: false,
-          };
-          res(result);
-        } else {
-          connection.query(
-            `SELECT secret, id FROM usuarios WHERE email = '${USER.email}'`,
-            function (err, results, fields) {
-              if (err) {
-                console.log(err);
-                res(false);
-              } else if (results[0]?.secret) {
-                let token = jwt.sign(
-                  { email: USER.email, id: results[0].id },
-                  results[0].secret,
-                  { expiresIn: 60 * 60 }
-                );
-                const result = {
-                  status: 200,
-                  data: "Usuario creado correctamente",
-                  token,
-                  ok: true,
-                };
-                res(result);
-              } else if (results[0] == undefined) {
-                const result = {
-                  status: 400,
-                  data: "Email o contraseña incorrect@s",
-                  ok: false,
-                };
-                res(result);
-              }
+    MongoClient.connect(URL, optionsMongo, (err, db) => {
+      try {
+        db.db("niutu")
+          .collection("usuarios")
+          .insertOne(USER, (err, response) => {
+            if (err) {
+              console.log(err);
+            } else {
+              let token = jwt.sign(
+                { email: response.ops[0].email, id: response.ops[0].id },
+                response.ops[0].secret,
+                {
+                  expiresIn: 60 * 60,
+                }
+              );
+              const result = {
+                status: 200,
+                data: "Nuevo usuario creado",
+                token,
+                ok: true,
+              };
+              res(result);
+              db.close();
             }
-          );
-        }
+          });
+      } catch {
+        rej({
+          status: 500,
+          data: "Error con la base de datos",
+          ok: false,
+        });
       }
-    );
+    });
   });
 };
 
