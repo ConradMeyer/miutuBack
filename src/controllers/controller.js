@@ -210,7 +210,7 @@ const mailer = (invoice) => {
     service: "Gmail",
     auth: {
       user: "tbgreenteam@gmail.com",
-      pass: "josjoschapcon",
+      pass: process.env.PASS,
     },
   });
 
