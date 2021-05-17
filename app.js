@@ -49,7 +49,7 @@ app.post("/signup", async (req, res) => {
   } else {
     res.status(406).json({
       status: 406,
-      data: "Email/contraseña no válida",
+      data: "Email/contraseña no válida, la contraseña debe tener 8 caracteres yal menos un número y una mayúscula.",
       ok: false,
     });
   }
