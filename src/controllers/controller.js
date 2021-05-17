@@ -36,12 +36,12 @@ function validatePass(pass) {
 }
 
 function validateName(name) {
-  let patternName = /^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/;
+  let patternName = /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłñńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u;
   return patternName.test(name);
 }
 
 function validateSurname(surname) {
-  let patternSurname = /^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/;
+  let patternSurname = /^[a-zA-ZàáâäãåąčćęèéêëėįìíîïłñńòóôöõøùúûüųūÿýżźñçčšžÀÁÂÄÃÅĄĆČĖĘÈÉÊËÌÍÎÏĮŁŃÒÓÔÖÕØÙÚÛÜŲŪŸÝŻŹÑßÇŒÆČŠŽ∂ð ,.'-]+$/u;
   return patternSurname.test(surname);
 }
 
